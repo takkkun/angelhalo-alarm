@@ -125,32 +125,28 @@ module Jobs
     def work
       now = Time.now.utc.getlocal('+09:00')
 
-      (env[:schedules] || []).each do |schedule|
-        key = :"schedule:#{schedule.month}:#{schedule.day}:notified"
+      schedule = (env[:schedules] || []).find do |schedule|
+        schedule.month == now.month && schedule.day == now.day
+      end
+
+      return unless schedule
+
+      @recipients.each do |(group, recipients)|
+        key = :"schedule:#{schedule.month}:#{schedule.day}:#{group}:notified"
         next if env[key]
 
-        @recipients.each do |(group, recipients)|
-          hour = schedule.hours[group]
-          scheduled_time = Time.new(now.year, schedule.month, schedule.day, hour, 0, 0, '+09:00')
-          next unless same_day?(scheduled_time, now)
-          diff = scheduled_time - now
+        scheduled_time = Time.new(now.year, schedule.month, schedule.day, schedule.hours[group], 0, 0, '+09:00')
+        diff = scheduled_time - now
+        next if diff > 1.minute
 
-          if diff < 1.minute
-            params = {
-              recipients: recipients.map { |member| "@#{member}" }.join(' '),
-              group:      group,
-              hour:       hour
-            }
+        options[:client].update(options[:text] % {
+          recipients: recipients.map { |member| "@#{member}" }.join(' '),
+          group:      group,
+          hour:       hour
+        })
 
-            options[:client].update(options[:text] % params)
-            env[key] = true
-          end
-        end
+        env[key] = true
       end
-    end
-
-    def same_day?(a, b)
-      a.year == b.year && a.month == b.month && a.day == b.day
     end
   end
 end
