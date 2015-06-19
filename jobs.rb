@@ -133,7 +133,7 @@ module Jobs
           scheduled_time = Time.new(now.year, schedule.month, schedule.day, hour, 0, 0, '+09:00')
           diff = now - scheduled_time
 
-          if diff < 1.minute
+          if diff < 1.minute && diff > -(1.hour)
             params = {
               recipients: recipients.map { |member| "@#{member}" }.join(' '),
               group:      group,
