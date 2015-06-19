@@ -1,4 +1,5 @@
 require 'logger'
+require 'active_support/core_ext/numeric/time'
 
 class Job
   def initialize(environment, options = {})
