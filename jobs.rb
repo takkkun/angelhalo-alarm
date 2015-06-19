@@ -132,9 +132,9 @@ module Jobs
           hour = schedule.hours[group]
           scheduled_time = Time.new(now.year, schedule.month, schedule.day, hour, 0, 0, '+09:00')
           next unless same_day?(scheduled_time, now)
-          diff = now - scheduled_time
+          diff = scheduled_time - now
 
-          if diff < 1.minute && diff > -(1.hour)
+          if diff < 1.minute
             params = {
               recipients: recipients.map { |member| "@#{member}" }.join(' '),
               group:      group,
