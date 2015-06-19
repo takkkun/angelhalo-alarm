@@ -131,6 +131,7 @@ module Jobs
         @recipients.each do |(group, recipients)|
           hour = schedule.hours[group]
           scheduled_time = Time.new(now.year, schedule.month, schedule.day, hour, 0, 0, '+09:00')
+          next unless same_day?(scheduled_time, now)
           diff = now - scheduled_time
 
           if diff < 1.minute && diff > -(1.hour)
@@ -145,6 +146,10 @@ module Jobs
           end
         end
       end
+    end
+
+    def same_day?(a, b)
+      a.year == b.year && a.month == b.month && a.day == b.day
     end
   end
 end
