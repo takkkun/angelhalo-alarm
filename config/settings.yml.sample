@@ -5,6 +5,12 @@ development:
       consumer_secret: 
       access_token: 
       access_token_secret: 
+  announce:
+    text: |
+      %{month}月%{day}日（%{week}）のエンジェル・ヘイローは以下のとおりです。
+
+      %{body}
+    part: '%{hour}時: %{groups}'
   alarm:
     text: '%{recipients} %{group}グループは%{hour}時からエンジェル・ヘイローです'
     users: []
@@ -16,6 +22,12 @@ production:
       consumer_secret: "<%= ENV['TWITTER_CONSUMER_SECRET'] %>"
       access_token: "<%= ENV['TWITTER_NOTIFIER_ACCESS_TOKEN'] %>"
       access_token_secret: "<%= ENV['TWITTER_NOTIFIER_ACCESS_TOKEN_SECRET'] %>"
+  announce:
+    text: |
+      %{month}月%{day}日（%{week}）のエンジェル・ヘイローは以下のとおりです。
+
+      %{body}
+    part: '%{hour}時: %{groups}'
   alarm:
     text: '%{recipients} %{group}グループは%{hour}時からエンジェル・ヘイローです'
     users: []

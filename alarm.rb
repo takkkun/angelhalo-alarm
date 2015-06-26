@@ -18,6 +18,13 @@ fetch = Jobs::Fetch.new(env, {
   target: 'granbluefantasy'
 })
 
+announce = Jobs::Announce.new(env, {
+  logger: logger,
+  client: client,
+  text:   Settings.announce.text,
+  part:   Settings.announce.part
+})
+
 alarm = Jobs::Alarm.new(env, {
   logger: logger,
   client: client,
@@ -26,4 +33,5 @@ alarm = Jobs::Alarm.new(env, {
 })
 
 Clockwork.every(1.hour,   fetch)
+Clockwork.every(5.minute, announce)
 Clockwork.every(1.minute, alarm)

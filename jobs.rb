@@ -109,6 +109,42 @@ module Jobs
     end
   end
 
+  class Announce < Job
+    def work
+      now = Time.now.utc.getlocal('+09:00')
+
+      schedule = (env[:schedules] || []).find do |schedule|
+        schedule.month == now.month && schedule.day == now.day
+      end
+
+      return unless schedule
+
+      key = :"schedule:#{schedule.month}:#{schedule.day}:announced"
+      return if env[key]
+
+      time_table = schedule.hours.reduce({}) do |time_table, (group, hour)|
+        time_table.merge(hour => [*time_table[hour], group])
+      end
+
+      time_lines = time_table.keys.sort.map do |hour|
+        groups = time_table[hour]
+        groups_string = groups.map { |group| "#{group}グループ" }.join(', ')
+        options[:part] % {hour: hour, groups: groups_string}
+      end
+
+      date = Time.new(now.year, schedule.month, schedule.day, 0, 0, 0, '+09:00')
+
+      options[:client].update(options[:text] % {
+        month: date.month,
+        day:   date.day,
+        week:  '日月火水木金土'[date.wday],
+        body:  time_lines.join("\n")
+      })
+
+      env[key] = true
+    end
+  end
+
   class Alarm < Job
     def initialize(environment, options = {})
       super
