@@ -1,5 +1,6 @@
 require 'clockwork'
 require 'twitter'
+require 'logger'
 require_relative 'settings'
 require_relative 'jobs'
 

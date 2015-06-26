@@ -13,8 +13,7 @@ class Job
   attr_reader :environment
   alias env environment
 
-  attr_accessor :logger
-  attr_reader :options
+  attr_reader :logger, :options
 
   class Environment < Hash
   end
@@ -30,7 +29,7 @@ module AngelHalo
       date_line, *group_lines = text.lines.map(&:rstrip)
 
       date_line_match = date_line.match(/\A【グランブルーファンタジー】【時限クエ】(\d+)\/(\d+)\([^\)]+\)\z/)
-      raise ParseError, 'header (date) line is missing' unless date_line_match
+      raise ParseError, 'date line (header) is missing' unless date_line_match
 
       month, day = date_line_match.captures.map(&:to_i)
       hours = {}
@@ -82,24 +81,26 @@ module Jobs
       else
         oldest_tweet_id = tweets.last.id
         newest_tweet_id = tweets.first.id
-        tweets_range = oldest_tweet_id == newest_tweet_id ? oldest_tweet_id : "#{oldest_tweet_id}..#{newest_tweet_id}"
-        logger.info("Fetch tweets: #{tweets_range}")
+
+        if oldest_tweet_id == newest_tweet_id
+          logger.info("Fetch tweet: #{oldest_tweet_id}")
+        else
+          logger.info("Fetch tweets: #{oldest_tweet_id}..#{newest_tweet_id}")
+        end
       end
 
       schedules = tweets.map { |tweet|
                     begin
                       AngelHalo::Schedule.parse(tweet.text)
                     rescue AngelHalo::Schedule::ParseError => ex
-                      logger.info("Failed to parse a tweet as Angel Halo's schedule: #{ex.message}")
+                      logger.info("Failed to parse the tweet as Angel Halo's schedule: #{ex.message}")
                       nil
                     end
                   }.compact
 
-      unless schedules.empty?
-        schedules.each do |schedule|
-          schedule.each do |(group, hour)|
-            logger.info("Set schedule for #{group} group with #{schedule.month}/#{schedule.day} #{hour}")
-          end
+      schedules.each do |schedule|
+        schedule.each do |(group, hour)|
+          logger.info("Set schedule for #{group} group with #{schedule.month}/#{schedule.day} #{hour}")
         end
       end
 
@@ -112,13 +113,11 @@ module Jobs
     def initialize(environment, options = {})
       super
 
-      @recipients = options[:users].reduce({}) do |recipients, user|
+      @users = options[:users].reduce({}) do |users, user|
         user = user.symbolize_keys
         name = user[:name]
         group = user[:group].upcase
-        recipients[group] ||= []
-        recipients[group] << name
-        recipients
+        users.merge(group => [*users[group], name])
       end
     end
 
@@ -131,7 +130,7 @@ module Jobs
 
       return unless schedule
 
-      @recipients.each do |(group, recipients)|
+      @users.each do |(group, names)|
         key = :"schedule:#{schedule.month}:#{schedule.day}:#{group}:notified"
         next if env[key]
 
@@ -140,9 +139,9 @@ module Jobs
         next if diff > 1.minute
 
         options[:client].update(options[:text] % {
-          recipients: recipients.map { |member| "@#{member}" }.join(' '),
+          recipients: names.map { |name| "@#{name}" }.join(' '),
           group:      group,
-          hour:       hour
+          hour:       schedule.hours[group]
         })
 
         env[key] = true
