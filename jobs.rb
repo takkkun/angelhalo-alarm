@@ -118,6 +118,7 @@ module Jobs
       end
 
       return unless schedule
+      return unless now.hour == 0
 
       key = :"schedule:#{schedule.month}:#{schedule.day}:announced"
       return if env[key]
