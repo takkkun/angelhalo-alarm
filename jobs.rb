@@ -172,8 +172,8 @@ module Jobs
         next if env[key]
 
         scheduled_time = Time.new(now.year, schedule.month, schedule.day, schedule.hours[group], 0, 0, '+09:00')
-        diff = scheduled_time - now
-        next if diff > 1.minute
+        alarm_term = (scheduled_time - 1.minute)..(scheduled_time + 1.hour)
+        next unless alarm_term.cover?(now)
 
         options[:client].update(options[:text] % {
           recipients: names.map { |name| "@#{name}" }.join(' '),
